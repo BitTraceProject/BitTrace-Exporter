@@ -163,9 +163,9 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 	}
 
 	// 调用接口上报
-	var receiveReq = protocol.ReceiveRequest{
+	var receiveReq = protocol.ReceiverDataRequest{
 		ExporterTag: s.tag,
-		DataPackage: protocol.ReceiveDataPackage{
+		DataPackage: protocol.ReceiverDataPackage{
 			Day:      s.currentDay,
 			LeftSeq:  constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
 			RightSeq: readCount + constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
@@ -181,7 +181,7 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 	}
 	var (
 		resp        *http.Response
-		receiveResp protocol.ReceiveResponse
+		receiveResp protocol.ReceiverDataResponse
 	)
 	for i := 0; i < constants.RETRY_COUNT; i++ {
 		resp, err = http.Post(s.receiverAddr, "", bytes.NewReader(reqAsBytes))
