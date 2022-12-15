@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
 	"github.com/fsnotify/fsnotify"
 	"io"
@@ -18,8 +19,7 @@ import (
 type (
 	// ExporterServer 串行化的，无需加锁
 	ExporterServer struct {
-		tag          string
-		receiverAddr string
+		conf config.ExporterConfig
 
 		// 当前日志文件的读取进度
 		currentN int64
@@ -40,7 +40,12 @@ type (
 	}
 )
 
-func NewExporterServer(conf *config.ExporterConfig, stopCh <-chan struct{}) *ExporterServer {
+const (
+	JoinAPIPattern = "/join?exporter_tag=%s"
+	QuitAPIPattern = "/quit?exporter_tag=%s&lazy_quit=%v"
+)
+
+func NewExporterServer(conf config.ExporterConfig, stopCh <-chan struct{}) *ExporterServer {
 	currentN := conf.StartSeq % constants.RECEIVE_DATA_PACKAGE_MAXN
 	currentFileID := conf.StartSeq / constants.RECEIVE_DATA_PACKAGE_MAXN
 	currentDay := conf.StartDay
@@ -49,8 +54,7 @@ func NewExporterServer(conf *config.ExporterConfig, stopCh <-chan struct{}) *Exp
 		panic(err)
 	}
 	s := &ExporterServer{
-		tag:                 conf.Tag,
-		receiverAddr:        conf.ReceiverServerAddr,
+		conf:                conf,
 		currentN:            currentN,
 		currentFileID:       currentFileID,
 		currentDay:          currentDay,
@@ -65,12 +69,63 @@ func NewExporterServer(conf *config.ExporterConfig, stopCh <-chan struct{}) *Exp
 
 // Run 不会加锁，所以不要调用多次
 func (s *ExporterServer) Run() {
+	// join receiver
+	var (
+		resp        *http.Response
+		receiveResp protocol.ReceiverDataResponse
+		err         error
+	)
+	for i := 0; i < constants.RETRY_COUNT; i++ {
+		resp, err = http.Get(s.conf.ReceiverServerAddr + fmt.Sprintf(JoinAPIPattern, s.conf.Tag))
+		if err == nil && resp.StatusCode == http.StatusOK {
+			respBody, err := io.ReadAll(resp.Body)
+			err = json.Unmarshal(respBody, &receiveResp)
+			if err == nil {
+				break
+			}
+		}
+	}
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Printf("[Run]get resp:%v,err:%v", resp, err)
+		panic(err)
+	}
+
+	if !receiveResp.OK {
+		log.Printf("[Run]get resp not ok")
+		panic(err)
+	}
+
 	go s.poll()
 	s.runAndWait()
 }
 
 func (s *ExporterServer) runAndWait() {
 	<-s.stopCh
+	// quit receiver
+	// join receiver
+	var (
+		resp        *http.Response
+		receiveResp protocol.ReceiverDataResponse
+		err         error
+	)
+	for i := 0; i < constants.RETRY_COUNT; i++ {
+		// TODO exporter 添加 lazyQuit 配置
+		resp, err = http.Get(s.conf.ReceiverServerAddr + fmt.Sprintf(QuitAPIPattern, s.conf.Tag, false))
+		if err == nil && resp.StatusCode == http.StatusOK {
+			respBody, err := io.ReadAll(resp.Body)
+			err = json.Unmarshal(respBody, &receiveResp)
+			if err == nil {
+				break
+			}
+		}
+	}
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Printf("[runAndWait]get resp:%v,err:%v", resp, err)
+	}
+
+	if !receiveResp.OK {
+		log.Printf("[runAndWait]get resp not ok")
+	}
 }
 
 func (s *ExporterServer) poll() {
@@ -90,12 +145,12 @@ func (s *ExporterServer) poll() {
 					s.currentN = 0
 					s.currentFileID = 0
 					s.currentDay = common.CurrentDay(common.DayTime(s.currentDay).Add(24 * time.Hour))
-					s.currentFilepath = common.CurrentIDLogFilepath(common.LogFileBasePath, s.tag, s.currentDay, s.currentFileID)
+					s.currentFilepath = common.CurrentIDLogFilepath(common.LogFileBasePath, s.conf.Tag, s.currentDay, s.currentFileID)
 				}
 				if nextFile {
 					s.currentN = 0
 					s.currentFileID += 1
-					s.currentFilepath = common.CurrentIDLogFilepath(common.LogFileBasePath, s.tag, s.currentDay, s.currentFileID)
+					s.currentFilepath = common.CurrentIDLogFilepath(common.LogFileBasePath, s.conf.Tag, s.currentDay, s.currentFileID)
 				}
 			}
 			if err != nil || nextDay || nextFile {
@@ -164,7 +219,7 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 
 	// 调用接口上报
 	var receiveReq = protocol.ReceiverDataRequest{
-		ExporterTag: s.tag,
+		ExporterTag: s.conf.Tag,
 		DataPackage: protocol.ReceiverDataPackage{
 			Day:      s.currentDay,
 			LeftSeq:  constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
@@ -184,7 +239,7 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 		receiveResp protocol.ReceiverDataResponse
 	)
 	for i := 0; i < constants.RETRY_COUNT; i++ {
-		resp, err = http.Post(s.receiverAddr, "", bytes.NewReader(reqAsBytes))
+		resp, err = http.Post(s.conf.ReceiverServerAddr, "", bytes.NewReader(reqAsBytes))
 		if err == nil && resp.StatusCode == http.StatusOK {
 			respBody, err := io.ReadAll(resp.Body)
 			err = json.Unmarshal(respBody, &receiveResp)

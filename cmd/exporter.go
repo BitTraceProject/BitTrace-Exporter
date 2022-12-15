@@ -25,11 +25,12 @@ func main() {
 		panic(err)
 	}
 	var (
-		loggerName = envPairs["CONTAINER_NAME"]
-		conf       = &config.ExporterConfig{
+		//loggerName = envPairs["CONTAINER_NAME"]
+		loggerName = "exporter-1"
+		conf       = config.ExporterConfig{
 			ReceiverServerAddr: "http://localhost:8080",
 			Tag:                loggerName,
-			StartDay:           "2022-12-04",
+			StartDay:           "2022-12-15",
 			StartSeq:           15,
 			PollInterval:       100,
 		}
