@@ -5,7 +5,6 @@ import (
 
 	"github.com/BitTraceProject/BitTrace-Exporter/server"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/config"
-	"github.com/BitTraceProject/BitTrace-Types/pkg/env"
 )
 
 // TODO 使用运行参数的方式代替环境变量
@@ -20,10 +19,10 @@ var (
 )
 
 func main() {
-	err := env.LookupEnvPairs(&envPairs)
-	if err != nil {
-		panic(err)
-	}
+	//err := env.LookupEnvPairs(&envPairs)
+	//if err != nil {
+	//	panic(err)
+	//}
 	var (
 		//loggerName = envPairs["CONTAINER_NAME"]
 		loggerName = "exporter-1"

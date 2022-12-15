@@ -41,8 +41,9 @@ type (
 )
 
 const (
-	JoinAPIPattern = "/join?exporter_tag=%s"
-	QuitAPIPattern = "/quit?exporter_tag=%s&lazy_quit=%v"
+	JoinAPIPattern = "/exporter/join?exporter_tag=%s"
+	DataAPIPattern = "/exporter/data"
+	QuitAPIPattern = "/exporter/quit?exporter_tag=%s&lazy_quit=%v"
 )
 
 func NewExporterServer(conf config.ExporterConfig, stopCh <-chan struct{}) *ExporterServer {
@@ -72,7 +73,7 @@ func (s *ExporterServer) Run() {
 	// join receiver
 	var (
 		resp        *http.Response
-		receiveResp protocol.ReceiverDataResponse
+		receiveResp protocol.ReceiverJoinResponse
 		err         error
 	)
 	for i := 0; i < constants.RETRY_COUNT; i++ {
@@ -91,7 +92,7 @@ func (s *ExporterServer) Run() {
 	}
 
 	if !receiveResp.OK {
-		log.Printf("[Run]get resp not ok")
+		log.Printf("[Run]get resp not ok,%v", receiveResp)
 		panic(err)
 	}
 
@@ -105,7 +106,7 @@ func (s *ExporterServer) runAndWait() {
 	// join receiver
 	var (
 		resp        *http.Response
-		receiveResp protocol.ReceiverDataResponse
+		receiveResp protocol.ReceiverQuitResponse
 		err         error
 	)
 	for i := 0; i < constants.RETRY_COUNT; i++ {
@@ -221,10 +222,10 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 	var receiveReq = protocol.ReceiverDataRequest{
 		ExporterTag: s.conf.Tag,
 		DataPackage: protocol.ReceiverDataPackage{
-			Day:      s.currentDay,
-			LeftSeq:  constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
-			RightSeq: readCount + constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
-			//DataPackage: lines,
+			Day:         s.currentDay,
+			LeftSeq:     constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
+			RightSeq:    readCount + constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
+			DataPackage: lines,
 		},
 	}
 
@@ -239,7 +240,7 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 		receiveResp protocol.ReceiverDataResponse
 	)
 	for i := 0; i < constants.RETRY_COUNT; i++ {
-		resp, err = http.Post(s.conf.ReceiverServerAddr, "", bytes.NewReader(reqAsBytes))
+		resp, err = http.Post(s.conf.ReceiverServerAddr+DataAPIPattern, "application/json", bytes.NewReader(reqAsBytes))
 		if err == nil && resp.StatusCode == http.StatusOK {
 			respBody, err := io.ReadAll(resp.Body)
 			err = json.Unmarshal(respBody, &receiveResp)
