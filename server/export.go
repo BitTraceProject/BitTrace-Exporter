@@ -215,11 +215,8 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 			nextFile = true
 		}
 	}
-	if len(lines) == 0 {
-		return nextDay, nextFile, nil
-	}
 
-	// 调用接口上报
+	// 调用接口上报，这里可能 len(lines) = 0，但是为了上报 eof 必须这样
 	var receiveReq = protocol.ReceiverDataRequest{
 		ExporterTag: s.conf.Tag,
 		DataPackage: protocol.ReceiverDataPackage{
@@ -227,6 +224,7 @@ func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 			LeftSeq:     constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
 			RightSeq:    readCount + constants.RECEIVE_DATA_PACKAGE_MAXN*s.currentFileID + s.currentN,
 			DataPackage: lines,
+			EOF:         eof,
 		},
 	}
 
