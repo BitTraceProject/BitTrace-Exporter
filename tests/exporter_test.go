@@ -1,16 +1,16 @@
 package tests
 
 import (
-	"github.com/BitTraceProject/BitTrace-Exporter/server"
 	"testing"
 	"time"
 
+	"github.com/BitTraceProject/BitTrace-Exporter/server"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/config"
 )
 
 func TestExporterServer(t *testing.T) {
 	var (
-		conf = &config.ExporterConfig{
+		conf = config.ExporterConfig{
 			ReceiverServerAddr: "http://localhost:8080",
 			Tag:                "exporter-1",
 			StartDay:           "2022-12-04",

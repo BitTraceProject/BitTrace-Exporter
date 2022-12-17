@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
+
 	"github.com/edsrzf/mmap-go"
 )
 

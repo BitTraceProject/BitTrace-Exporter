@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"github.com/BitTraceProject/BitTrace-Exporter/common"
 	"testing"
 	"time"
+
+	"github.com/BitTraceProject/BitTrace-Exporter/common"
 )
 
 func TestGetLogger(t *testing.T) {

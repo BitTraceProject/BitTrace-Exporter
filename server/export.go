@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
-	"github.com/fsnotify/fsnotify"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +11,10 @@ import (
 
 	"github.com/BitTraceProject/BitTrace-Exporter/common"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/config"
+	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/protocol"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 type (
