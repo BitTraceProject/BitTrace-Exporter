@@ -13,6 +13,7 @@ import (
 
 type (
 	Logger interface {
+		Msg(data string)
 		Info(format string, a ...interface{})
 		Warn(format string, a ...interface{})
 		Error(format string, a ...interface{})
@@ -81,6 +82,10 @@ func newLogger(loggerName string) Logger {
 	return l
 }
 
+func (l *defaultLogger) Msg(msg string) {
+	l.println(msg)
+}
+
 func (l *defaultLogger) Info(format string, a ...interface{}) {
 	l.printf("I", format, a...)
 }
@@ -95,6 +100,16 @@ func (l *defaultLogger) Error(format string, a ...interface{}) {
 
 func (l *defaultLogger) Fatal(format string, a ...interface{}) {
 	l.printf("F", format, a...)
+}
+
+func (l *defaultLogger) println(msg string) {
+	// 刷新日志文件 logf
+	l.Lock()
+	defer l.Unlock()
+
+	l.initLogger()
+	l.log.Println(msg)
+	l.currentN++
 }
 
 func (l *defaultLogger) printf(level string, format string, a ...interface{}) {
