@@ -3,7 +3,7 @@ module github.com/BitTraceProject/BitTrace-Exporter
 go 1.18
 
 require (
-	github.com/BitTraceProject/BitTrace-Types v0.0.0-20230102125012-024c625ce0a9
+	github.com/BitTraceProject/BitTrace-Types v0.0.0-20230109124149-45c76275af51
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/fsnotify/fsnotify v1.5.4
 )
