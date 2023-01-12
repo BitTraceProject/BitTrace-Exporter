@@ -1,22 +1,12 @@
 package common
 
 import (
-	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
 )
-
-var (
-	LogFileBasePath string
-)
-
-func init() {
-	homePath, _ := os.LookupEnv("HOME")
-	LogFileBasePath = filepath.Join(homePath, constants.BITTRACE_ROOT_DIR, constants.BITTRACE_LOG_DIR)
-}
 
 func DayTime(dayStr string) time.Time {
 	day, _ := time.Parse(constants.TIME_LAYOUT_DAY, dayStr)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/BitTraceProject/BitTrace-Exporter/server"
 	"github.com/BitTraceProject/BitTrace-Types/pkg/config"
+	"github.com/BitTraceProject/BitTrace-Types/pkg/env"
 )
 
 // TODO 使用运行参数的方式代替环境变量
@@ -12,21 +13,21 @@ import (
 
 var (
 	envPairs = map[string]string{
-		"CONTAINER_NAME":    "",
-		"BITTRACE_ROOT_DIR": "",
-		"BITTRACE_LOG_DIR":  "",
+		"CONTAINER_NAME": "",
 	}
 )
 
 func main() {
-	//err := env.LookupEnvPairs(&envPairs)
-	//if err != nil {
-	//	panic(err)
-	//}
+	// TODO 老是失败，加上 sudo
+	// TODO docker 日志没权限读，加上 sudo 根目录变了
+	err := env.LookupEnvPairs(&envPairs)
+	if err != nil {
+		panic(err)
+	}
 	var (
-		//loggerName = envPairs["CONTAINER_NAME"]
-		loggerName = "exporter-1"
-		conf       = config.ExporterConfig{
+		loggerName = envPairs["CONTAINER_NAME"]
+		//loggerName = "exporter-1"
+		conf = config.ExporterConfig{
 			ReceiverServerAddr: "http://localhost:8080",
 			Tag:                loggerName,
 			StartDay:           "2022-12-15",
