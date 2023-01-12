@@ -202,6 +202,7 @@ func (s *ExporterServer) watch(waitWatchCh chan<- bool) {
 func (s *ExporterServer) export() (nextDay, nextFile bool, err error) {
 	lines, eof, err := common.ScanFileLines(s.currentFilepath, s.currentN)
 	if err != nil {
+		log.Printf("[export]scan file err:%v", err)
 		return nextDay, nextFile, err
 	}
 
