@@ -3,6 +3,7 @@ package common
 import (
 	"bufio"
 	"bytes"
+	"log"
 	"os"
 
 	"github.com/BitTraceProject/BitTrace-Types/pkg/constants"
@@ -16,12 +17,14 @@ import (
 func ScanFileLines(filePath string, startN int64) ([][]byte, bool, error) {
 	f, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	if err != nil {
+		log.Printf("[ScanFileLines]open file err:%v", err)
 		return nil, false, err
 	}
 	defer f.Close()
 
 	m, err := mmap.Map(f, mmap.RDONLY, 0)
 	if err != nil {
+		log.Printf("[ScanFileLines]mmap file err:%v", err)
 		return nil, false, err
 	}
 	defer m.Unmap()
