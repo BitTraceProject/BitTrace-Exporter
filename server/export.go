@@ -197,12 +197,16 @@ func (s *ExporterServer) watch(waitWatchCh chan<- bool) {
 		waitWatchCh <- true
 		s.watcher.Remove(s.currentFilepath)
 	}()
+	timer := time.NewTimer(time.Second) // 防止一直 watch 导致阻塞
 	for {
 		select {
 		case e, ok := <-s.watcher.Events:
 			if ok && e.Op == fsnotify.Write {
 				return
 			}
+		case <-timer.C:
+			s.exporterLogger.Error("[watch]watch timeout:%s", s.currentFilepath)
+			return
 		case err := <-s.watcher.Errors:
 			s.exporterLogger.Error("[watch]watch file:%s,err:%v", s.currentFilepath, err)
 		}
