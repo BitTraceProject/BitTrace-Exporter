@@ -197,7 +197,7 @@ func (s *ExporterServer) watch(waitWatchCh chan<- bool) {
 		waitWatchCh <- true
 		s.watcher.Remove(s.currentFilepath)
 	}()
-	timer := time.NewTimer(time.Second) // 防止一直 watch 导致阻塞
+	timer := time.NewTimer(time.Minute) // 防止一直 watch 导致阻塞
 	for {
 		select {
 		case e, ok := <-s.watcher.Events:
